@@ -1,5 +1,8 @@
 #include "npGPUArray.cuh"
 #include "customKernels.cuh"
+#include "npRandom.cuh"
+
+
 #pragma once
 namespace np {
 	template<typename TP>
@@ -29,7 +32,7 @@ namespace np {
 
 	template<typename TP>
 	// max(a, b). element wise maximum
-	ArrayGPU<TP> max(ArrayGPU<TP>& A, ArrayGPU<TP>& B) {
+	ArrayGPU<TP> maximum(ArrayGPU<TP>& A, ArrayGPU<TP>& B) {
 		if (A.rows == 1 || A.cols == 1) {
 			// A is a scalar
 			ArrayGPU<TP> res(B.rows, B.cols);
