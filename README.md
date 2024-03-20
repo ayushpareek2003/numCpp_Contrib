@@ -22,7 +22,7 @@ currently only 2D and 1D arrays supported.
 * exp()
 * log()
 * comparison operators (>, >=, <=, <) -> returns an array of 1s and 0s, depending on whether the condition is satisfied.
-* sum -> ongoing..
-* max, min, argmax, argmin -> ongoing..
+* sum -> with axis argument
+* max, min, argmax, argmin -> with axis argument
 *  sort, argsort -> next update.
 * sqrt, square, pow 
