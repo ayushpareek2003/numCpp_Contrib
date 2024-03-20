@@ -51,14 +51,13 @@ namespace np {
 		}
 	}
 
-
-
 	void getGPUConfig(int deviceId = 0) {
 		cudaDeviceProp deviceProp;
 		cudaGetDeviceProperties(&deviceProp, deviceId);
 		GPU_NUM_CUDA_CORE = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
 		GPU_NUM_SM = deviceProp.multiProcessorCount;
 	}
+
 	template<typename TP>
 	class ArrayGPU {
 	private:
@@ -236,9 +235,7 @@ namespace np {
 			cudaDeviceSynchronize();
 		}
 		
-
 		// defining dot product
-
 		ArrayGPU<TP> dot(ArrayGPU<TP>& B) {
 			/*
 				C = A @ B
@@ -555,6 +552,7 @@ namespace np {
 			cudaDeviceSynchronize();
 			return res;
 		}
+
 
 		// multiply
 		ArrayGPU<TP> operator*(ArrayGPU<TP>& B) {
@@ -920,6 +918,8 @@ namespace np {
 			cudaDeviceSynchronize();
 			return res;
 		}
+		
+
 		
 
 		//sum. along axis or total

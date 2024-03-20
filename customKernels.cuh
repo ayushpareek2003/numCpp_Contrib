@@ -533,6 +533,47 @@ __global__ void kernelLogMat(TP* A, TP* C, int size) {
 }
 
 
+// np.square
+// A = MxN
+// C = MxN
+//Ci = square(Ai)
+template<typename TP>
+__global__ void kernelSquareMat(TP* A, TP* C, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		C[idx] = A[idx] * A[idx];
+	}
+}
+
+
+// np.sqrt
+// A = MxN
+// C = MxN
+//Ci = square(Ai)
+template<typename TP>
+__global__ void kernelSqrtMat(TP* A, TP* C, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		C[idx] =  sqrt( A[idx] );
+	}
+}
+
+// np.pow
+// A = MxN
+// C = MxN
+//Ci = square(Ai)
+template<typename TP>
+__global__ void kernelPowMat(TP* A, int pow, TP* C, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		C[idx] = powf(A[idx], static_cast<float>(pow));
+	}
+}
+
+
 // np.sum(A)
 // A = MxN
 // np.sum(A)

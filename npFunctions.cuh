@@ -107,4 +107,43 @@ namespace np {
 		cudaDeviceSynchronize();
 		return res;
 	}
+
+	// np.square
+	template<typename TP>
+	ArrayGPU<TP> square(ArrayGPU<TP> &A){
+		ArrayGPU<TP> res(A.rows, A.cols);
+
+		const int BLOCK_SIZE = 128;
+		dim3 block(BLOCK_SIZE);
+		dim3 grid(ceil(res.size(), block.x));
+		kernelSquareMat<TP> << <grid, block >> > (A.mat, res.mat, res.size());
+		cudaDeviceSynchronize();
+		return res;
+	}
+
+	// np.sqrt
+	template<typename TP>
+	ArrayGPU<TP> sqrt(ArrayGPU<TP> &A){
+		ArrayGPU<TP> res(A.rows, A.cols);
+
+		const int BLOCK_SIZE = 128;
+		dim3 block(BLOCK_SIZE);
+		dim3 grid(ceil(res.size(), block.x));
+		kernelSqrtMat<TP> << <grid, block >> > (A.mat, res.mat, res.size());
+		cudaDeviceSynchronize();
+		return res;
+	}
+
+	// np.pow 
+	template<typename TP>
+	ArrayGPU<TP> pow(ArrayGPU<TP> &A, int pow){
+		ArrayGPU<TP> res(A.rows, A.cols);
+
+		const int BLOCK_SIZE = 128;
+		dim3 block(BLOCK_SIZE);
+		dim3 grid(ceil(res.size(), block.x));
+		kernelPowMat<TP> << <grid, block >> > (A.mat, pow, res.mat, res.size());
+		cudaDeviceSynchronize();
+		return res;
+	}
 }

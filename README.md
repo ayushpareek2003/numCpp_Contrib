@@ -25,3 +25,4 @@ currently only 2D and 1D arrays supported.
 * sum -> ongoing..
 * max, min, argmax, argmin -> ongoing..
 *  sort, argsort -> next update.
+* sqrt, square, pow 
