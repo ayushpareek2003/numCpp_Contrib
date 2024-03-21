@@ -600,7 +600,7 @@ __global__ void kernelReduceSum(TP* A, TP* output, int size) {
 
 	// assume 1 hi grid launch kr rha h tu
 	while (idx < size) {
-		s_A[tx] += A[idx] + ((idx + BLOCK_SIZE < size) ? A[idx + BLOCK_SIZE] : 0);
+		s_A[tx] += ( A[idx] + ((idx + BLOCK_SIZE < size) ? A[idx + BLOCK_SIZE] : 0) );
 		idx += gridSize;
 	}
 	__syncthreads();

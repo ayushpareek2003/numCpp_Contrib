@@ -56,6 +56,8 @@ namespace np {
 		cudaGetDeviceProperties(&deviceProp, deviceId);
 		GPU_NUM_CUDA_CORE = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
 		GPU_NUM_SM = deviceProp.multiProcessorCount;
+		cublasCreate(&cbls_handle);
+
 	}
 
 	template<typename TP>
@@ -70,11 +72,7 @@ namespace np {
 			this->rows = rows;
 			this->cols = cols;
 
-			CUDA_CALL(cudaMalloc((void**)&mat, this->rows * this->cols * sizeof(TP)));
-
-			if (cbls_handle == nullptr) {
-				cublasCreate(&cbls_handle);
-			}
+			CUDA_CALL(cudaMalloc((void**)&this->mat, this->rows * this->cols * sizeof(TP)));
 		}
 
 		// initialise array with all values set to Val
@@ -82,7 +80,7 @@ namespace np {
 			this->rows = rows;
 			this->cols = cols;
 
-			CUDA_CALL(cudaMalloc((void**)&mat, this->rows * this->cols * sizeof(TP)));
+			CUDA_CALL(cudaMalloc((void**)&this->mat, this->rows * this->cols * sizeof(TP)));
 
 			const int BLOCK_SIZE = GPU_NUM_CUDA_CORE;
 			dim3 block(BLOCK_SIZE);
@@ -929,31 +927,42 @@ namespace np {
 				const int BLOCK_SIZE = ( (GPU_NUM_CUDA_CORE == 64) ? 64 : 128 ) * 2;
 				dim3 block(BLOCK_SIZE);
 				dim3 grid(std::min<int>(ceil(this->size(), block.x), GPU_NUM_SM * 2));
-				ArrayGPU<TP> res(1, 1);
+
+				auto res = ArrayGPU<TP>(2, 1);
 				// device pointer tmp
-				float* tmp_d;
-				CUDA_CALL(cudaMalloc((void**)&tmp_d, grid.x));
+				ArrayGPU<TP> tmp_d(1, grid.x, 0);
 				switch (GPU_NUM_CUDA_CORE) {
 				case 64:
-					kernelReduceSum<TP, 64 * 2> << <grid, block >> > (this->mat, tmp_d, this->size());
+					kernelReduceSum<TP, 64 * 2> << <grid, block >> > (this->mat, tmp_d.mat, this->size());
 					cudaDeviceSynchronize();
 					// please guarantee that BLOCK_SIZE > grid.x. otherwise multiple kernel calls will have to be made.
-					kernelReduceSum<TP, 64 * 2> << <1, block >> > (tmp_d, res.mat, grid.x);
+					kernelReduceSum<TP, 64 * 2> << <1, block >> > (tmp_d.mat, res.mat, grid.x);
 					cudaDeviceSynchronize();
 					break;
 				default:
-					kernelReduceSum<TP, 128 * 2> << <grid, block >> > (this->mat, tmp_d, this->size());
+					kernelReduceSum<TP, 128 * 2> << <grid, block >> > (this->mat, tmp_d.mat, this->size());
 					cudaDeviceSynchronize();
+
+					printf("\nTMP_D:\n");
+					tmp_d.print();
+					printf("\nTMP_D END\n");
+					printf("\nORG AR:\n");
+					this->print();
+					printf("\nORF AR END.\n");
+					printf("\nRES:\n");
+					res.print();
+					printf("\nRES END.\n");
+					
+					std::cout<<"\nMAT ADD: "<<this->mat<<" RES ADD: "<<res.mat<<" TMP_D ADD: "<<tmp_d.mat<<std::endl;
 					// please guarantee that BLOCK_SIZE > grid.x. otherwise multiple kernel calls will have to be made.
-					kernelReduceSum<TP, 128 * 2> << <1, block >> > (tmp_d, res.mat, grid.x);
-					cudaDeviceSynchronize();
+					if(grid.x > 0){
+						kernelReduceSum<TP, 128 * 2> << <1, block >> > (tmp_d.mat, res.mat, grid.x);
+						cudaDeviceSynchronize();
+					}
 					break;
 
 				}
 				
-
-				CUDA_CALL(cudaFree(tmp_d));
-
 				return res;
 			}
 			else if (axis == 0) {
@@ -969,33 +978,31 @@ namespace np {
 				dim3 block(BLOCK_SIZE);
 				dim3 grid(std::min<int>(ceil(this->cols, block.x), GPU_NUM_SM * 2));
 
-				float* tmp_d;
-				CUDA_CALL(cudaMalloc((void**)&tmp_d, this->rows * grid.x));
+				ArrayGPU<TP> tmp_d(this->rows, grid.x, 0);
 				switch (GPU_NUM_CUDA_CORE) {
 				case 64:
 					for (int i = 0; i < this->rows; ++i) {
-						kernelReduceSum<TP, 64 * 2> << <grid, block >> > (this->mat + i * this->cols, tmp_d + i * grid.x, this->cols);
+						kernelReduceSum<TP, 64 * 2> << <grid, block >> > (this->mat + i * this->cols, tmp_d.mat + i * grid.x, this->cols);
 					}
 
 					cudaDeviceSynchronize();
 
 
 					for (int i = 0; i < this->rows; ++i) {
-						kernelReduceSum<TP, 64 * 2> << <1, block >> > (tmp_d + i * grid.x, res.mat + i, grid.x);
+						kernelReduceSum<TP, 64 * 2> << <1, block >> > (tmp_d.mat + i * grid.x, res.mat + i, grid.x);
 					}
 
 					cudaDeviceSynchronize();
 					break;
 				default:
 					for (int i = 0; i < this->rows; ++i) {
-						kernelReduceSum<TP, 128 * 2> << <grid, block >> > (this->mat + i * this->cols, tmp_d + i * grid.x, this->cols);
+						kernelReduceSum<TP, 128 * 2> << <grid, block >> > (this->mat + i * this->cols, tmp_d.mat + i * grid.x, this->cols);
 					}
 
 					cudaDeviceSynchronize();
 
-
 					for (int i = 0; i < this->rows; ++i) {
-						kernelReduceSum<TP, 128 * 2> << <1, block >> > (tmp_d + i * grid.x, res.mat + i, grid.x);
+						kernelReduceSum<TP, 128 * 2> << <1, block >> > (tmp_d.mat + i * grid.x, res.mat + i, grid.x);
 					}
 
 					cudaDeviceSynchronize();
@@ -1014,7 +1021,7 @@ namespace np {
 				dim3 grid(std::min<int>(ceil(this->size(), block.x), GPU_NUM_SM * 2));
 				ArrayGPU<TP> res(1, 1);
 				// device pointer tmp
-				float* tmp_d;
+				TP* tmp_d;
 				CUDA_CALL(cudaMalloc((void**)&tmp_d, grid.x));
 				switch (GPU_NUM_CUDA_CORE) {
 				case 64:
@@ -1052,8 +1059,8 @@ namespace np {
 				dim3 block(BLOCK_SIZE);
 				dim3 grid(std::min<int>(ceil(this->cols, block.x), GPU_NUM_SM * 2));
 
-				float* tmp_d;
-				CUDA_CALL(cudaMalloc((void**)&tmp_d, this->rows * grid.x));
+				TP* tmp_d;
+				CUDA_CALL(cudaMalloc((void**)&tmp_d, sizeof(TP) * this->rows * grid.x));
 				switch (GPU_NUM_CUDA_CORE) {
 				case 64:
 					for (int i = 0; i < this->rows; ++i) {
@@ -1099,7 +1106,7 @@ namespace np {
 
 				ArrayGPU<TP> res(1, 1);
 				// device pointer tmp
-				float* tmp_d;
+				TP* tmp_d;
 				CUDA_CALL(cudaMalloc((void**)&tmp_d, grid.x));
 				switch (GPU_NUM_CUDA_CORE) {
 				case 64:
@@ -1137,8 +1144,8 @@ namespace np {
 				dim3 block(BLOCK_SIZE);
 				dim3 grid(std::min<int>(ceil(this->cols, block.x), GPU_NUM_SM * 2));
 
-				float* tmp_d;
-				CUDA_CALL(cudaMalloc((void**)&tmp_d, this->rows * grid.x));
+				TP* tmp_d;
+				CUDA_CALL(cudaMalloc((void**)&tmp_d, sizeof(TP) * this->rows * grid.x));
 				switch (GPU_NUM_CUDA_CORE) {
 				case 64:
 					for (int i = 0; i < this->rows; ++i) {
@@ -1184,7 +1191,7 @@ namespace np {
 				ArrayGPU<TP> res(1);
 				ArrayGPU<int> resIdx(1);
 				// device pointer tmp
-				float* tmp_A_d;
+				TP* tmp_A_d;
 				CUDA_CALL(cudaMalloc((void**)&tmp_A_d, grid.x));
 				int* tmp_A_Idx_d;
 				CUDA_CALL(cudaMalloc((void**)&tmp_A_Idx_d, grid.x));
@@ -1226,7 +1233,7 @@ namespace np {
 				dim3 block(BLOCK_SIZE);
 				dim3 grid(std::min<int>(ceil(this->cols, block.x), GPU_NUM_SM * 2));
 
-				float* tmp_A_d;
+				TP* tmp_A_d;
 				CUDA_CALL(cudaMalloc((void**)&tmp_A_d, this->rows * grid.x));
 				int* tmp_A_Idx_d;
 				CUDA_CALL(cudaMalloc((void**)&tmp_A_Idx_d, this->rows * grid.x));
@@ -1275,7 +1282,7 @@ namespace np {
 				ArrayGPU<TP> res(1);
 				ArrayGPU<int> resIdx(1);
 				// device pointer tmp
-				float* tmp_A_d;
+				TP* tmp_A_d;
 				CUDA_CALL(cudaMalloc((void**)&tmp_A_d, grid.x));
 				int* tmp_A_Idx_d;
 				CUDA_CALL(cudaMalloc((void**)&tmp_A_Idx_d, grid.x));
@@ -1317,7 +1324,7 @@ namespace np {
 				dim3 block(BLOCK_SIZE);
 				dim3 grid(std::min<int>(ceil(this->cols, block.x), GPU_NUM_SM * 2));
 
-				float* tmp_A_d;
+				TP* tmp_A_d;
 				CUDA_CALL(cudaMalloc((void**)&tmp_A_d, this->rows * grid.x));
 				int* tmp_A_Idx_d;
 				CUDA_CALL(cudaMalloc((void**)&tmp_A_Idx_d, this->rows * grid.x));

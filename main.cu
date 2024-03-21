@@ -6,18 +6,26 @@
 
 int main() {
 	np::getGPUConfig();
-	std::cout << np::GPU_NUM_CUDA_CORE;
-	auto a = np::Random::randn<float>(10,10);	
-	printf("\nA: \n");
+	printf("\nGPU CONFIG: NUM_CORES: %d, NUM_SMs = %d\n", np::GPU_NUM_CUDA_CORE, np::GPU_NUM_SM);
+
+	auto a = np::Random::rand<float>(10);
+	a.reshape(5, 2);
 	a.print();
 
-	printf("\n argmin(A): \n");
-	a.argmin().print();
-	printf("\n argmin(A, 0)\n");
-	a.argmin(0).print();
-	printf("\n argmin(A, 1)\n");
-	a.argmin(1).print();
+	printf("\n TOT SUM: \n");
+	a.sum().print();
 
+	printf("\n A:\n");
+	a.print();
+	
+
+	printf("\n SUM (axis = 0): \n");
+	a.sum(0).print();
+
+	printf("\n SUM (axis = 1): \n");
+	a.sum(1).print();
+
+	cudaDeviceReset();
 
 	return 0;
 }

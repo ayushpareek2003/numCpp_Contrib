@@ -58,6 +58,7 @@ namespace np {
 
             return ar;
         }
+        
         template<typename TP>
 		static ArrayGPU<TP> rand(int rows, int cols, unsigned long long seed) {
 			ArrayGPU<TP> ar(rows, cols);
