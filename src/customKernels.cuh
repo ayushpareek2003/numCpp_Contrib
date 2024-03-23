@@ -1,11 +1,374 @@
-#include <cuda_runtime.h>
-#include <cmath>
 #pragma once
 
-// cuda error checking macro
-#define CUDA_CALL(x) do { if((x) != cudaSuccess) { \
-    printf("Error at %s:%d\n",__FILE__,__LINE__); \
-    }} while(0)
+#include <cuda_runtime.h>
+#include <curand.h>
+#include <curand_kernel.h>
+#include <cmath>
+
+#include <iostream>
+#include <type_traits> // for std::is_same
+
+// curand kernels
+
+// for uniform distribution
+template<typename TP>
+__global__ void kernelInitializeRandomUnif(TP* arr, int size, unsigned long long seed);
+
+// for uniform distribution range = [lo, hi]
+template<typename TP>
+__global__ void kernelInitializeRandomUnif(TP* arr, int size, int lo, int hi, unsigned long long seed);
+
+// for normal distribution
+template<typename TP>
+__global__ void kernelInitializeRandomNorm(TP* arr, int size, unsigned long long seed);
+
+// 1 x 1 grid to print matrices
+template<typename TP>
+__global__ void kernelPrintMat(TP* in, int M, int N);
+
+// kernel to transpose an array.
+template<typename TP, int TILE_DIM, int BLOCK_ROWS>
+// TILE_WIDTH = 32. 1 block copies 32 x 32 elements. 
+__global__ void kernelTransposeInMem(TP* idata, TP* odata, int M, int N);
+
+// kernel to initialise all values of array to val.
+template<typename TP>
+__global__ void kernelInitMatBroadcast(TP* in, TP Val, int size);
+
+//kernel to initialised arange array -> 0 to n - 1, array size N
+template<typename TP>
+__global__ void kernelInitMatArange(TP* in, int size);
+
+// kernel to get values at a range of indexes.
+template<typename TP>
+__global__ void kernelGetMatValues(TP* in, TP* out, int* idxs, int size);
+
+// kernel to get values at a range of indexes.
+template<typename TP>
+__global__ void kernelGetMatValues(TP* in, int rdin, TP* out, int* rows, int* cols, int size);
+
+// kernel to set values at a range of indexes.
+template<typename TP>
+__global__ void kernelSetMatValues(TP* in, int rdin, TP* val, int* rows, int* cols, int size);
+
+// kernel to set values at a range of indexes.
+template<typename TP>
+__global__ void kernelSetMatValues(TP* in, TP* val, int* idxs, int size);
+
+//ARITHMATIC FUNCTIONs
+
+// addition functions
+
+//add corrosponding elements of 2 matrices 
+// C = A + B
+template<typename TP>
+__global__ void kernelMatAddMat(TP* A, TP* B, TP* C, int size);
+
+//add matrix and a scalar.
+// C = A + Scal (broadcasting)
+//add scalar to all values of the matrix
+template<typename TP>
+__global__ void kernelMatAddScalar(TP* A, TP Scal, TP* C, int size);
+
+//add matrix  and vector, mat.rows = vec.dim 
+//C = A + V (broadcasting)
+// shapeA = M x N matrix
+template<typename TP>
+__global__ void kernelMatAddVecAlongRows(TP* A, TP* V, TP* C, int size, int N);
+
+//add matrix  and vector, mat.cols = vec.dim 
+//C = A + V (broadcasting)
+// shapeA = M x N matrix
+template<typename TP>
+__global__ void kernelMatAddVecAlongCols(TP* A, TP* V, TP* C, int size, int N);
+
+// subtraction functions
+
+//subtract corrosponding elements of 2 matrices 
+// C = A - B
+template<typename TP>
+__global__ void kernelMatSubMat(TP* A, TP* B, TP* C, int size);
+
+//subtract matrix and a scalar.
+// C = A - Scal (broadcasting)
+//subtract scalar from all values of the matrix
+template<typename TP>
+__global__ void kernelMatSubScalar(TP* A, TP Scal, TP* C, int size);
+
+//sub matrix  and vector, mat.rows = vec.dim 
+//C = A - V (broadcasting)
+// shapeA = M x N matrix
+template<typename TP>
+__global__ void kernelMatSubVecAlongRows(TP* A, TP* V, TP* C, int size, int N);
+
+//sub matrix and vector, mat.cols = vec.dim 
+//C = A - V (broadcasting)
+// shapeA = M x N matrix
+template<typename TP>
+__global__ void kernelMatSubVecAlongCols(TP* A, TP* V, TP* C, int size, int N);
+
+// multiplication functions
+
+//mul corrosponding elements of 2 matrices 
+// C = A * B
+template<typename TP>
+__global__ void kernelMatMulMat(TP* A, TP* B, TP* C, int size);
+
+//mul matrix and a scalar.
+// C = A * Scal (broadcasting)
+//mul scalar to all values of the matrix
+template<typename TP>
+__global__ void kernelMatMulScalar(TP* A, TP Scal, TP* C, int size);
+
+//mul matrix  and vector, mat.rows = vec.dim 
+//C = A * V (broadcasting)
+// shapeA = M x N matrix
+template<typename TP>
+__global__ void kernelMatMulVecAlongRows(TP* A, TP* V, TP* C, int size, int N);
+
+//mul matrix  and vector, mat.cols = vec.dim 
+//C = A * V (broadcasting)
+// shapeA = M x N matrix
+template<typename TP>
+__global__ void kernelMatMulVecAlongCols(TP* A, TP* V, TP* C, int size, int N);
+
+// division functions
+
+//div corrosponding elements of 2 matrices 
+// C = A / B
+template<typename TP>
+__global__ void kernelMatDivMat(TP* A, TP* B, TP* C, int size);
+
+//div matrix and a scalar.
+// C = A / Scal (broadcasting)
+//div scalar to all values of the matrix
+template<typename TP>
+__global__ void kernelMatDivScalar(TP* A, TP Scal, TP* C, int size);
+
+//div matrix  and vector, mat.rows = vec.dim 
+//C = A / V (broadcasting)
+// shapeA = M x N matrix
+template<typename TP>
+__global__ void kernelMatDivVecAlongRows(TP* A, TP* V, TP* C, int size, int N);
+
+//div matrix  and vector, mat.cols = vec.dim 
+//C = A / V (broadcasting)
+// shapeA = M x N matrix
+template<typename TP>
+__global__ void kernelMatDivVecAlongCols(TP* A, TP* V, TP* C, int size, int N);
+
+// compare 2 matrix ( element wise ) and put max value in result matrix.
+//A = MxN
+//B = MxN
+//Ci = max(Ai, Bi). (elementwise)
+template<typename TP>
+__global__ void kernelMatMaximumMat(TP* A, TP *B, TP* C, int size);
+
+// compare a matrix and a scalar and put max of them in result matrix.
+//A = MxN
+//B = scalar
+//Ci = max(Ai, B). (elementwise)
+template<typename TP>
+__global__ void kernelMatMaximumScalar(TP* A, TP B, TP* C, int size);
+
+// comparison operators
+
+// compare 2 matrix. tell if former greater.
+//A = MxN
+//B = scalar
+//Ci = Ai > Bi. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsGreaterThanMat(TP* A, TP *B, TP* C, int size);
+
+// compare a matrix and scalar tell if former greater.
+//A = MxN
+//B = scalar
+//Ci = Ai > B. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsGreaterThanScalar(TP* A, TP B, TP* C, int size);
+
+// compare 2 matrix. tell if former smaller.
+//A = MxN
+//B = scalar
+//Ci = Ai < Bi. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsLessThanMat(TP* A, TP* B, TP* C, int size);
+
+// compare a matrix and scalar tell if former smaller.
+//A = MxN
+//B = scalar
+//Ci = Ai < B. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsLessThanScalar(TP* A, TP B, TP* C, int size);
+
+//A = MxN
+//B = scalar
+//Ci = Ai >= Bi. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsGreaterThanEqMat(TP* A, TP* B, TP* C, int size);
+
+//A = MxN
+//B = scalar
+//Ci = Ai >= B. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsGreaterThanEqScalar(TP* A, TP B, TP* C, int size);
+
+//A = MxN
+//B = scalar
+//Ci = Ai <= Bi. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsLessThanEqMat(TP* A, TP* B, TP* C, int size);
+
+//A = MxN
+//B = scalar
+//Ci = Ai <= B. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsLessThanEqScalar(TP* A, TP B, TP* C, int size);
+
+//A = MxN
+//B = scalar
+//Ci = Ai == Bi. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsEqMat(TP* A, TP* B, TP* C, int size);
+
+//A = MxN
+//B = scalar
+//Ci = Ai == B. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsEqScalar(TP* A, TP B, TP* C, int size);
+
+//A = MxN
+//B = scalar
+//Ci = Ai != Bi. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsNotEqMat(TP* A, TP* B, TP* C, int size);
+
+//A = MxN
+//B = scalar
+//Ci = Ai != B. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsNotEqScalar(TP* A, TP B, TP* C, int size);
+
+// np.exp
+// A = MxN
+// C = MxN
+//Ci = exp(Ai)
+template<typename TP>
+__global__ void kernelExpMat(TP* A, TP* C, int size);
+
+// np.log
+// A = MxN
+// C = MxN
+//Ci = exp(Ai)
+template<typename TP>
+__global__ void kernelLogMat(TP* A, TP* C, int size);
+
+// np.square
+// A = MxN
+// C = MxN
+//Ci = square(Ai)
+template<typename TP>
+__global__ void kernelSquareMat(TP* A, TP* C, int size);
+
+// np.sqrt
+// A = MxN
+// C = MxN
+//Ci = square(Ai)
+template<typename TP>
+__global__ void kernelSqrtMat(TP* A, TP* C, int size);
+
+// np.pow
+// A = MxN
+// C = MxN
+//Ci = square(Ai)
+template<typename TP>
+__global__ void kernelPowMat(TP* A, int pow, TP* C, int size);
+
+// REDUCTION
+
+// np.sum(A)
+// A = MxN
+// np.sum(A)
+template< typename TP >
+__device__ void kernelWarpReduceSum(volatile TP* s_A, int tid);
+
+// warp unroll
+template<typename TP, int BLOCK_SIZE>
+__global__ void kernelReduceSum(TP* A, TP* output, int size);
+
+template< typename TP >
+__device__ void kernelWarpReduceMax(volatile TP* s_A, int tid);
+
+// warp unroll
+template<typename TP, int BLOCK_SIZE>
+__global__ void kernelReduceMax(TP* A, TP* output, int size);
+
+// min
+template< typename TP >
+__device__ void kernelWarpReduceMin(volatile TP* s_A, int tid);
+
+// warp unroll
+template<typename TP, int BLOCK_SIZE>
+__global__ void kernelReduceMin(TP* A, TP* output, int size);
+
+template< typename TP >
+__device__ void kernelWarpReduceArgMax(volatile TP* s_A, volatile int* s_Idx, int tid);
+
+// warp unroll
+template<typename TP, int BLOCK_SIZE>
+__global__ void kernelReduceArgMax(TP* A, TP* outputMax, int *outputIdx, int size);
+
+// second reduction k time p -> idx serial nhi h, to ek idx ka bhi array dena hoga
+template<typename TP, int BLOCK_SIZE>
+__global__ void kernelReduceArgMax(TP* A, int *A_idx, TP* outputMax, int* outputIdx, int size);
+
+template< typename TP >
+__device__ void kernelWarpReduceArgMin(volatile TP* s_A, volatile int* s_Idx, int tid);
+
+// warp unroll
+template<typename TP, int BLOCK_SIZE>
+__global__ void kernelReduceArgMin(TP* A, TP* outputMax, int* outputIdx, int size);
+
+// second reduction k time p -> idx serial nhi h, to ek idx ka bhi array dena hoga
+template<typename TP, int BLOCK_SIZE>
+__global__ void kernelReduceArgMin(TP* A, int *A_idx, TP* outputMax, int* outputIdx, int size);
+
+
+// ########## FUNCTION DEFINITIONS
+
+
+// for uniform distribution
+template<typename TP>
+__global__ void kernelInitializeRandomUnif(TP* arr, int size, unsigned long long seed) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        curandState state;
+        curand_init(seed, idx, 0, &state);  // Initialize curand state for each thread
+        arr[idx] = curand_uniform(&state);  // Generate a random value
+    }
+}
+
+// for uniform distribution
+template<typename TP>
+__global__ void kernelInitializeRandomUnif(TP* arr, int size, int lo, int hi, unsigned long long seed) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        curandState state;
+        curand_init(seed, idx, 0, &state);  // Initialize curand state for each thread
+        arr[idx] = (curand_uniform(&state) * (hi - lo) + lo);  // Generate a random value
+    }
+}
+
+// for normal distribution
+template<typename TP>
+__global__ void kernelInitializeRandomNorm(TP* arr, int size, unsigned long long seed) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        curandState state;
+        curand_init(seed, idx, 0, &state);  // Initialize curand state for each thread
+        arr[idx] = curand_normal(&state);  // Generate a random value
+    }
+}
 
 // 1 x 1 grid to print matrices
 template<typename TP>
@@ -34,8 +397,7 @@ __global__ void kernelPrintMat(TP* in, int M, int N) {
 	}
 }
 
-
-// kernel to copy a matrix stored in row major order to column major order and vice-versa.
+// kernel to transpose an array.
 template<typename TP, int TILE_DIM, int BLOCK_ROWS>
 // TILE_WIDTH = 32. 32 x 32 copy krega ek matrix
 __global__ void kernelTransposeInMem(TP* idata, TP* odata, int M, int N) {
@@ -63,8 +425,7 @@ __global__ void kernelTransposeInMem(TP* idata, TP* odata, int M, int N) {
 
 }
 
-
-// kernel to initialise all values of nparray to val.
+// kernel to initialise all values of array to val.
 template<typename TP>
 __global__ void kernelInitMatBroadcast(TP* in, TP Val, int size) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -285,9 +646,6 @@ __global__ void kernelMatMulVecAlongCols(TP* A, TP* V, TP* C, int size, int N) {
 	}
 }
 
-
-
-
 // division functions
 
 //div corrosponding elements of 2 matrices 
@@ -343,7 +701,6 @@ __global__ void kernelMatDivVecAlongCols(TP* A, TP* V, TP* C, int size, int N) {
 }
 
 
-// compare 2 matrix ( element wise ) and put max value in result matrix.
 //A = MxN
 //B = MxN
 //Ci = max(Ai, Bi). (elementwise)
@@ -359,7 +716,6 @@ __global__ void kernelMatMaximumMat(TP* A, TP *B, TP* C, int size) {
 	}
 }
 
-// compare a matrix and a scalar and put max of them in result matrix.
 //A = MxN
 //B = scalar
 //Ci = max(Ai, B). (elementwise)
@@ -375,7 +731,38 @@ __global__ void kernelMatMaximumScalar(TP* A, TP B, TP* C, int size) {
 	}
 }
 
-// compare 2 matrix. tell if former greater.
+//A = MxN
+//B = MxN
+//Ci = min(Ai, Bi). (elementwise)
+template<typename TP>
+__global__ void kernelMatMinimumMat(TP* A, TP *B, TP* C, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		if (A[idx] < B[idx])
+			C[idx] = A[idx];
+		else
+			C[idx] = B[idx];
+	}
+}
+
+//A = MxN
+//B = scalar
+//Ci = max(Ai, B). (elementwise)
+template<typename TP>
+__global__ void kernelMatMinimumScalar(TP* A, TP B, TP* C, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		if (A[idx] < B)
+			C[idx] = A[idx];
+		else
+			C[idx] = B;
+	}
+}
+
+// comparison operators
+
 //A = MxN
 //B = scalar
 //Ci = Ai > Bi. (elementwise)
@@ -391,7 +778,6 @@ __global__ void kernelMatIsGreaterThanMat(TP* A, TP *B, TP* C, int size) {
 	}
 }
 
-// compare a matrix and scalar tell if former greater.
 //A = MxN
 //B = scalar
 //Ci = Ai > B. (elementwise)
@@ -408,7 +794,6 @@ __global__ void kernelMatIsGreaterThanScalar(TP* A, TP B, TP* C, int size) {
 }
 
 
-// compare 2 matrix. tell if former smaller.
 //A = MxN
 //B = scalar
 //Ci = Ai < Bi. (elementwise)
@@ -424,7 +809,6 @@ __global__ void kernelMatIsLessThanMat(TP* A, TP* B, TP* C, int size) {
 	}
 }
 
-// compare a matrix and scalar tell if former smaller.
 //A = MxN
 //B = scalar
 //Ci = Ai < B. (elementwise)
@@ -440,7 +824,6 @@ __global__ void kernelMatIsLessThanScalar(TP* A, TP B, TP* C, int size) {
 	}
 }
 
-// compare 2 matrix. tell if former greater.
 //A = MxN
 //B = scalar
 //Ci = Ai >= Bi. (elementwise)
@@ -456,10 +839,9 @@ __global__ void kernelMatIsGreaterThanEqMat(TP* A, TP* B, TP* C, int size) {
 	}
 }
 
-// compare a matrix and scalar tell if former greater.
 //A = MxN
 //B = scalar
-//Ci = Ai > B. (elementwise)
+//Ci = Ai >= B. (elementwise)
 template<typename TP>
 __global__ void kernelMatIsGreaterThanEqScalar(TP* A, TP B, TP* C, int size) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -473,10 +855,9 @@ __global__ void kernelMatIsGreaterThanEqScalar(TP* A, TP B, TP* C, int size) {
 }
 
 
-// compare 2 matrix. tell if former smaller.
 //A = MxN
 //B = scalar
-//Ci = Ai < Bi. (elementwise)
+//Ci = Ai <= Bi. (elementwise)
 template<typename TP>
 __global__ void kernelMatIsLessThanEqMat(TP* A, TP* B, TP* C, int size) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -489,10 +870,9 @@ __global__ void kernelMatIsLessThanEqMat(TP* A, TP* B, TP* C, int size) {
 	}
 }
 
-// compare a matrix and scalar tell if former smaller.
 //A = MxN
 //B = scalar
-//Ci = Ai < B. (elementwise)
+//Ci = Ai <= B. (elementwise)
 template<typename TP>
 __global__ void kernelMatIsLessThanEqScalar(TP* A, TP B, TP* C, int size) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -505,6 +885,66 @@ __global__ void kernelMatIsLessThanEqScalar(TP* A, TP B, TP* C, int size) {
 	}
 }
 
+
+//A = MxN
+//B = scalar
+//Ci = Ai == Bi. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsEqMat(TP* A, TP* B, TP* C, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		if (A[idx] == B[idx])
+			C[idx] = 1;
+		else
+			C[idx] = 0;
+	}
+}
+
+//A = MxN
+//B = scalar
+//Ci = Ai == B. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsEqScalar(TP* A, TP B, TP* C, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		if (A[idx] == B)
+			C[idx] = 1;
+		else
+			C[idx] = 0;
+	}
+}
+
+//A = MxN
+//B = scalar
+//Ci = Ai != Bi. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsNotEqMat(TP* A, TP* B, TP* C, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		if (A[idx] != B[idx])
+			C[idx] = 1;
+		else
+			C[idx] = 0;
+	}
+}
+
+//A = MxN
+//B = scalar
+//Ci = Ai != B. (elementwise)
+template<typename TP>
+__global__ void kernelMatIsNotEqScalar(TP* A, TP B, TP* C, int size) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx < size) {
+		if (A[idx] != B)
+			C[idx] = 1;
+		else
+			C[idx] = 0;
+	}
+}
 
 // np.exp
 // A = MxN
@@ -573,6 +1013,7 @@ __global__ void kernelPowMat(TP* A, int pow, TP* C, int size) {
 	}
 }
 
+// REDUCTION
 
 // np.sum(A)
 // A = MxN
@@ -587,7 +1028,7 @@ __device__ void kernelWarpReduceSum(volatile TP* s_A, int tid) { // warp reduce 
 	s_A[tid] += s_A[tid + 1];
 }
 
-// warp unroll krenge
+// warp unroll
 template<typename TP, int BLOCK_SIZE>
 __global__ void kernelReduceSum(TP* A, TP* output, int size) {
 	const int bx = blockIdx.x;
@@ -642,7 +1083,7 @@ __device__ void kernelWarpReduceMax(volatile TP* s_A, int tid) { // warp reduce 
 	s_A[tid] = max(s_A[tid], s_A[tid + 1]);
 }
 
-// warp unroll krenge
+// warp unroll
 template<typename TP, int BLOCK_SIZE>
 __global__ void kernelReduceMax(TP* A, TP* output, int size) {
 	const int bx = blockIdx.x;
@@ -701,7 +1142,7 @@ __device__ void kernelWarpReduceMin(volatile TP* s_A, int tid) { // warp reduce 
 	s_A[tid] = min(s_A[tid], s_A[tid + 1]);
 }
 
-// warp unroll krenge
+// warp unroll
 template<typename TP, int BLOCK_SIZE>
 __global__ void kernelReduceMin(TP* A, TP* output, int size) {
 	const int bx = blockIdx.x;
@@ -782,7 +1223,7 @@ __device__ void kernelWarpReduceArgMax(volatile TP* s_A, volatile int* s_Idx, in
 	}
 }
 
-// warp unroll krenge
+// warp unroll
 template<typename TP, int BLOCK_SIZE>
 __global__ void kernelReduceArgMax(TP* A, TP* outputMax, int *outputIdx, int size) {
 	const int bx = blockIdx.x;
@@ -949,7 +1390,7 @@ __device__ void kernelWarpReduceArgMin(volatile TP* s_A, volatile int* s_Idx, in
 	}
 }
 
-// warp unroll krenge
+// warp unroll
 template<typename TP, int BLOCK_SIZE>
 __global__ void kernelReduceArgMin(TP* A, TP* outputMax, int* outputIdx, int size) {
 	const int bx = blockIdx.x;

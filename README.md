@@ -2,27 +2,42 @@
 Porting Numpy to C while maintaining similar pythonic syntax and acceralating on GPU.
 
 
-Functions Implemented:
+## Functions Implemented:
 
 currently only 2D and 1D arrays supported.
 
+### npArray
+* constructor() -> default, parameter, deep copy
+* reshape()
+* size()
+* copyFromCPU(), copyFromGPU()
+* print()
+* overloaded cout
+* T()
+* at() -> idx, (r, c), (ArrayIdx), (ArrayRows, ArrayCols)
+* set() -> (idx, val), (r, c, val), (ArrayIdx, valArray), (ArrayRow, ArrayCol, ArrayVal)
+* dot(), Tdot(), dotT()
+* operators :
+   - arithmetic +, -, /, * (broadcasting supported)
+   - unary negative -
+   - assignment (=, deep copy)
+   - comparison <, >, <=, =>, ==, != (broadcasting operator)
+   - sum, max, min, argmax, argmin (axis), (broadcasting)
+* destructor
+
+### npFUnctions
 * Ones
 * Zeros
 * arange
-* Reshape
-* getter setter functions. (may be improved in a later update.)
-* getter setter for list access also -> a[ np.arange(10), np.arange(10 ] (fetch diag elements.)
-* Random
-   - Randn
-   - Rand
-* Maximum -> np.maximum(gets element wise maximum
-* arithmetic operators ( +, -, *, / )
-* dot -> also added Tdot and dotT, to do A.T @ B without transposing overhead.
-* T() -> returns transpose
+* Maximum, gets element wise maximum (broadcasting supported)
+* Minimum
 * exp()
 * log()
-* comparison operators (>, >=, <=, <) -> returns an array of 1s and 0s, depending on whether the condition is satisfied.
-* sum -> with axis argument
-* max, min, argmax, argmin -> with axis argument
-*  sort, argsort -> next update.
-* sqrt, square, pow 
+* square()
+* sqrt()
+* pow() 
+
+### Random
+* Randn -> normal distribution
+* Rand -> default [0, 1], [lo, hi]
+ 

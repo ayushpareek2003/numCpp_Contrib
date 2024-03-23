@@ -1,31 +1,28 @@
-#include "npGPUArray.cuh"
-#include "npRandom.cuh"
+#include "src/npGPUArray.cuh"
+#include "src/npRandom.cuh"
+#include "src/npFunctions.cuh"
 
-#include "npFunctions.cuh"
+
 #include <time.h>
+
 
 int main() {
 	np::getGPUConfig();
 	printf("\nGPU CONFIG: NUM_CORES: %d, NUM_SMs = %d\n", np::GPU_NUM_CUDA_CORE, np::GPU_NUM_SM);
 
-	auto a = np::Random::rand<float>(10);
-	a.reshape(5, 2);
-	a.print();
+	auto a = np::Random::rand<int>(5, 2, 40, 60);
 
-	printf("\n TOT SUM: \n");
-	a.sum().print();
+	std::cout<<"A: \n"<<a<<"\n";
+	std::cout<<"A.T: \n"<<a.T()<<"\n";
+	// std::cout<<"A.T.T: \n"<<a.T().T()<<"\n";
 
-	printf("\n A:\n");
-	a.print();
-	
+	auto a_neg = -a;
+	std::cout<<"\n-A: \n"<<a_neg<<"\n";
 
-	printf("\n SUM (axis = 0): \n");
-	a.sum(0).print();
-
-	printf("\n SUM (axis = 1): \n");
-	a.sum(1).print();
+	std::cout<<"\nTOTAL SUM: "<<a.sum()<<"\n";
+	std::cout<<"\nSUM ALONG COLS: "<<a.T().sum(1)<<"\n";
+	std::cout<<"\nSUM ALONG ROWS: "<<a.sum(1)<<"\n";
 
 	cudaDeviceReset();
-
 	return 0;
 }

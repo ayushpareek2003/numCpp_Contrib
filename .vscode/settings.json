@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "cmath": "cpp",
-        "complex": "cpp",
-        "random": "cpp",
-        "ctime": "cpp",
-        "filesystem": "cpp"
-    }
-}
