@@ -1633,5 +1633,4 @@ namespace np {
 	ArrayGPU<TP>::~ArrayGPU() {
 		cudaFree(this->mat);
 	}
-
 }

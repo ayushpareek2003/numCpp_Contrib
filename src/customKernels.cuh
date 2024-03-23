@@ -12,7 +12,7 @@
 
 // for uniform distribution
 template<typename TP>
-__global__ void kernelInitializeRandomUnif(TP* arr, int size, unsigned long long seed);
+__global__ void kernelInitializeRandomUnif(TP* arr, const int size, const unsigned long long seed);
 
 // for uniform distribution range = [lo, hi]
 template<typename TP>

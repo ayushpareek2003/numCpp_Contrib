@@ -16,29 +16,16 @@ namespace np {
 	public:
         // from uniform distribution
         template<typename TP>
-        static ArrayGPU<TP> rand(int rows, int cols, int lo, int hi, unsigned long long seed);
+        static ArrayGPU<TP> rand(int rows = 1, int cols = 1, int lo = 0, int hi = 1, unsigned long long seed = static_cast<unsigned long long>(time(NULL)));
         
         template<typename TP>
 		static ArrayGPU<TP> rand(int rows, int cols, unsigned long long seed);
 
-        template<typename TP>
-        static ArrayGPU<TP> rand(int rows = 1, int cols = 1);
-
-        template<typename TP>
-        static ArrayGPU<TP> Random::rand(int rows, int cols, int lo, int hi);
-
         // from normal distribution
         template<typename TP>
-        static ArrayGPU<TP> randn(int rows, int cols, unsigned long long seed);
-
-        template<typename TP>
-        static ArrayGPU<TP> randn(int rows = 1, int cols = 1);
+        static ArrayGPU<TP> randn(int rows = 1, int cols = 1, unsigned long long seed = static_cast<unsigned long long>(time(NULL)));
 	};
     
-    template<typename TP>
-    static ArrayGPU<TP> Random::rand(int rows, int cols) {
-        return rand<TP>(rows, cols, time(NULL));
-    }
 
     template<typename TP>
     static ArrayGPU<TP> Random::rand(int rows, int cols, unsigned long long seed) {
@@ -54,11 +41,6 @@ namespace np {
     }
 
     template<typename TP>
-    static ArrayGPU<TP> Random::rand(int rows, int cols, int lo, int hi) {
-        return rand<TP>(rows, cols, lo, hi, time(NULL));
-    }
-
-    template<typename TP>
     static ArrayGPU<TP> Random::rand(int rows, int cols, int lo, int hi, unsigned long long seed) {
         ArrayGPU<TP> ar(rows, cols);
 
@@ -70,8 +52,6 @@ namespace np {
 
         return ar;
     }
-
-    
 
     // from normal distribution
     template<typename TP>
@@ -85,10 +65,5 @@ namespace np {
         cudaDeviceSynchronize();
 
         return ar;
-    }
-
-    template<typename TP>
-    static ArrayGPU<TP> randn(int rows, int cols) {
-        return randn<TP>(rows, cols, time(NULL));
     }
 }
