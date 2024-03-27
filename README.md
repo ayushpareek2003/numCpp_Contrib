@@ -25,7 +25,7 @@ currently only 2D and 1D arrays supported.
    - sum, max, min, argmax, argmin (axis), (broadcasting)
 * destructor
 
-### npFUnctions
+### npFunctions
 * Ones
 * Zeros
 * arange
