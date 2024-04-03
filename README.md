@@ -18,11 +18,13 @@ currently only 2D and 1D arrays supported.
 * set() -> (idx, val), (r, c, val), (ArrayIdx, valArray), (ArrayRow, ArrayCol, ArrayVal)
 * dot(), Tdot(), dotT()
 * operators :
-   - arithmetic +, -, /, * (broadcasting supported)
+   - arithmetic +, -, /, * 
    - unary negative -
    - assignment (=, deep copy)
-   - comparison <, >, <=, =>, ==, != (broadcasting operator)
-   - sum, max, min, argmax, argmin (axis), (broadcasting)
+   - comparison <, >, <=, =>, ==, != 
+   - sum, max, min, argmax, argmin (axis).
+
+      all operators support broadcasting
 * destructor
 
 ### npFunctions
@@ -36,7 +38,8 @@ currently only 2D and 1D arrays supported.
 * square()
 * sqrt()
 * pow() 
-
+* shuffle() => shuffles an array's values randomly. (permutations)
+* array_split(ar, num_parts) => divides array into num_parts, even if parts are unequal. returns vector of arrays.
 ### Random
 * Randn -> normal distribution
 * Rand -> default [0, 1], [lo, hi]
