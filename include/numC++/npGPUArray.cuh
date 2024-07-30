@@ -1,10 +1,10 @@
 #ifndef NPGPUARRAY_CUH
 #define NPGPUARRAY_CUH
 
-#include <numC/npGPUArray.cuh>
-#include <numC/customKernels.cuh>
-#include <numC/utils.cuh>
-#include <numC/gpuConfig.cuh>
+#include <numC++/npGPUArray.cuh>
+#include <numC++/customKernels.cuh>
+#include <numC++/utils.cuh>
+#include <numC++/gpuConfig.cuh>
 
 #include <cuda_runtime.h>
 #include <cublas_v2.h>

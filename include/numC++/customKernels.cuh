@@ -1,7 +1,7 @@
 #ifndef CUSTOMKERNELS_CUH
 #define CUSTOMKERNELS_CUH
 
-#include <numc/utils.cuh> // for Operator types
+#include <numC++/utils.cuh> // for Operator types
 
 #include <cuda_runtime.h>
 #include <curand.h>

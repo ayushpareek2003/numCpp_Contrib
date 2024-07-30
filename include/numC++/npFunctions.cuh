@@ -1,9 +1,9 @@
 #ifndef NPFUNCTIONS_CUH
 #define NPFUNCTIONS_CUH
 
-#include <numC/npGPUArray.cuh>
-#include <numC/customKernels.cuh>
-#include <numC/gpuConfig.cuh>
+#include <numC++/npGPUArray.cuh>
+#include <numC++/customKernels.cuh>
+#include <numC++/gpuConfig.cuh>
 #include <time.h>
 
 #include <cuda_runtime.h>

@@ -1,20 +1,20 @@
-# numC: Accelerated GPU Library for C++, with NumPy syntax
-numC is a C++ library inspired by numpy, designed for accelerated numerical computations on GPUs. It provides a familiar syntax similar to numpy, making it easy for users familiar with numpy to transition to GPU-accelerated computing seamlessly while working on C++.
+# numC++: Accelerated GPU Library for C++, with NumPy syntax
+numC++ is a C++ library inspired by numpy, designed for accelerated numerical computations on GPUs. It provides a familiar syntax similar to numpy, making it easy for users familiar with numpy to transition to GPU-accelerated computing seamlessly while working on C++.
 
-Currently, numC only supports 2D arrays.
+Currently, numC++ only supports 2D arrays.
 
 ## Installation
-To use numC, follow these steps:
+To use numC++, follow these steps:
 
 1. Clone the repository:
 
-    `git clone https://github.com/Sha-x2-nk/numC.git`
-2. Include whatever numC headers / functions you require:
+    `git clone https://github.com/Sha-x2-nk/numC++.git`
+2. Include whatever numC++ headers / functions you require:
     ```cpp 
-    #include "numC/npGPUArray.cuh"
+    #include "numC++/npGPUArray.cuh"
     ```
 
-3. compile you numC including program using nvcc, and also compile and link gpuConfig.cu file.
+3. compile you numC++ including program using nvcc, and also compile and link gpuConfig.cu file.
 
 ## Features
 ### ArrayGPU Class
@@ -23,8 +23,8 @@ The ArrayGPU class provides functionalities for creating, manipulating, and perf
 * Creation and initialization of arrays
 
 ```cpp
-#include "numC/npGPUArray.cuh"
-#include "numC/gpuConfig.cuh"
+#include "numC++/npGPUArray.cuh"
+#include "numC++/gpuConfig.cuh"
 
 int main(){
     np::getGPUConfig(0); 
@@ -59,9 +59,9 @@ float v = A.at(0); // assumes array as linear and gives number at position.
 v = A.at(5, 4); // gives number at 5, 4 position.
 /* above functions return the value as typename(float in this case), and the variable is
 transferred to CPU RAM. Hence printing by direct for loop will take time - each variable 
-will be moved to CPU RAM from GPU RAM, numC has print and cout for that..*/
+will be moved to CPU RAM from GPU RAM, numC++ has print and cout for that..*/
 
-/* numC also has support for indexing multiple elements at once, like numpy. This will 
+/* numC++ also has support for indexing multiple elements at once, like numpy. This will 
 become helpful, when we introduce np::arange function*/
 
 auto C = A.at(np::ArrayGPU<int> idxs); // will return a 1D ArrayGPU with all the elements
@@ -79,7 +79,7 @@ C.set(np::ArrayGPU<int> rows, np::ArrayGPU<int> cols, np::ArrayGPU<float> val);
 ```cpp
 auto A = np::ArrayGPU<float>(1024, 1024);
 A.print(); // prints whole array
-std::cout<<A; // numC has overloaded << operator with cout, so cout also prints the full
+std::cout<<A; // numC++ has overloaded << operator with cout, so cout also prints the full
               // array.
 ```
 * Element-wise operations (addition, subtraction, multiplication, division). Returns a new array. (Supports broadcasting)
@@ -147,7 +147,7 @@ np::ArrayGPU<int> for these functions.*/
 ### npFunctions header
 * ones, zeros and arange
 ```cpp
-#include "numC/npFunctions.cuh"
+#include "numC++/npFunctions.cuh"
 
 // call gpuConfig
 
@@ -164,7 +164,7 @@ C = np::arange<float>(10); // 1d array with numbers from 0 to 9, all at their re
 
 * maximum, minimum
 ```cpp
-#include "numC/npFunctions.cuh"
+#include "numC++/npFunctions.cuh"
 
 // call gpuConfig
 auto A = np::ArrayGPU<float>(10, 5, 7); // 10x5 array, fill with 7
@@ -181,7 +181,7 @@ C = np::maximum(A, np::ArrayGPU<float>(1, 5));
 ```
 * exp, log, square, sqrt, pow
 ```cpp
-#include "numC/npFunctions.cuh"
+#include "numC++/npFunctions.cuh"
 
 // call gpuConfig
 auto A = np::ArrayGPU<float>(10, 5, 7); // 10x5 array, fill with 7
@@ -194,7 +194,7 @@ C = np::pow(A, 15); // returns an array after raising all elements by a power of
 ```
 * shuffle
 ```cpp
-#include "numC/npFunctions.cuh"
+#include "numC++/npFunctions.cuh"
 
 // call gpuConfig
 auto A = np::arange<float>(1000); // array with numbers from 0 - 999
@@ -203,7 +203,7 @@ auto C = np::shuffle(A); // shuffles array randomly. (permutes)
 ```
 * array_split
 ```cpp
-#include "numC/npFunctions.cuh"
+#include "numC++/npFunctions.cuh"
 
 // call gpuConfig
 auto A = np::arange<float>(1000); // array with numbers from 0 - 999
@@ -218,7 +218,7 @@ auto batches = np::array_split(A, 5, 0); // array, num_parts, axis.
 Random array generation (uniform and normal distributions)
 * Uniform distribution
 ```cpp
-#include "numC/npFunctions.cuh"
+#include "numC++/npFunctions.cuh"
 
 // call gpuConfig
 
@@ -231,7 +231,7 @@ auto A = np::Random::rand<float>(1, 100, 20, 50); // filled with numbers from un
 ```
 * Normal distribution
 ```cpp
-#include "numC/npFunctions.cuh"
+#include "numC++/npFunctions.cuh"
 
 // call gpuConfig
 
@@ -244,7 +244,7 @@ auto A = np::Random::randn<float>(1, 100); // filled with numbers from normal di
 Initialises variables of NUM_CUDA_CORES and NUM_SMS to launch gpu functions effectively. Also Initialises cublas_handle to do dot products using cubals sgemm API.
 
 ### Custom Kernels header
-This has definitions of kernels of all functions we have used in numC which runs on GPU (except dot, dot is from cublas).
+This has definitions of kernels of all functions we have used in numC++ which runs on GPU (except dot, dot is from cublas).
 
 ## Contribution and Future Development
 While NumPy offers a vast array of commonly used functions such as sort, argsort, and more, this project currently focuses on a specific set of functionalities. For my immediate needs, I've implemented the necessary functions; however, I may revisit this project in the future to expand its capabilities.

@@ -29,8 +29,10 @@
         }                                                   \
     } while (0)
 
+// utility function to compute
+#define np_ceil(x, y) ((x + y - 1) / y)
+
 namespace np{
-    #define np_ceil(x, y) ((x + y - 1) / y)
 	enum Operation {
 		NP_OP_ADD,
 		NP_OP_SUB,

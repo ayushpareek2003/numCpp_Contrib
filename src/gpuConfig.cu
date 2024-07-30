@@ -1,4 +1,4 @@
-#include <numC/gpuConfig.cuh>
+#include <numC++/gpuConfig.cuh>
 
 #include <cublas_v2.h>
 
