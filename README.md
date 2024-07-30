@@ -1,7 +1,7 @@
 # numC++: Accelerated GPU Library for C++, with NumPy syntax
 numC++ is a C++ library inspired by numpy, designed for accelerated numerical computations on GPUs. It provides a familiar syntax similar to numpy, making it easy for users familiar with numpy to transition to GPU-accelerated computing seamlessly while working on C++.
 
-Currently, numC++ only supports 2D arrays.
+Currently, numC++ only supports upto 2D arrays.
 
 ## Installation
 To use numC++, follow these steps:
@@ -41,10 +41,10 @@ int main(){
 
 
 
-    int r = A.rows; // gets number of rows
-    int c = A.cols; // gets number of cols
-    int sz = A.size(); // gets size, rows * cols
-    float *m = A.mat; // pointer pointing to array in global memory of GPU
+    int r = A.rows;     // gets number of rows
+    int c = A.cols;     // gets number of cols
+    int sz = A.size();  // gets size, rows * cols
+    float *m = A.mat;   // pointer pointing to array in global memory of GPU
 }
 ```
 * Reshaping arrays
@@ -55,8 +55,8 @@ int main(){
 * Getter, setter
 ```cpp
 auto A = np::ArrayGPU<float>(10, 5);
-float v = A.at(0); // assumes array as linear and gives number at position. 
-v = A.at(5, 4); // gives number at 5, 4 position.
+float v = A.at(0);                      // assumes array as linear and gives number at position. 
+v = A.at(5, 4);                         // gives number at 5, 4 position.
 /* above functions return the value as typename(float in this case), and the variable is
 transferred to CPU RAM. Hence printing by direct for loop will take time - each variable 
 will be moved to CPU RAM from GPU RAM, numC++ has print and cout for that..*/
