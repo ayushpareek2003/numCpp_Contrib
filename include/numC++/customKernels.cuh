@@ -1961,4 +1961,56 @@ __global__ void kernelSoftMaxUtils(TP *scores, const int *y, float *scores_for_l
 	}
 }
 
+
+// Radix sort 
+
+//counting frequecy of occurence
+template <typename TP>
+__global__ void Count(TP* input, TP* output, int shift, int n) {
+    int i = threadIdx.x + blockDim.x * blockIdx.x;
+    if (i < n) {
+        int bucket = (input[i] >> shift) & (Radix - 1);
+        atomicAdd(&output[bucket], 1);
+    }
+}
+
+//exclusive scan to get starting point for each allotment
+template<typename TP>
+__global__ void scan(TP* inp, TP* out) {
+    __shared__ int temp[Radix];
+
+    int x = threadIdx.x;
+    if (x < Radix) {
+        temp[x] = inp[x];
+    }
+    __syncthreads();
+
+    
+    int val = 0;
+    for (int i = 1; i < Radix; i <<= 1) {
+        if (x >= i) val = temp[x - i];
+        __syncthreads();
+        if (x >= i) temp[x] += val;
+        __syncthreads();
+    }
+
+    if (x < Radix) {
+        out[x] = (x == 0) ? 0 : temp[x - 1]; 
+    }
+}
+
+//for final placement
+template<typename TP>
+__global__ void rearrange(int* inp, int* out, int* scan, int shift, int n, int* temp_indices) {
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    if (x < n) {
+        int key = (inp[x] >> shift) & (Radix - 1);
+        int newidx = atomicAdd(&scan[key], 1);
+        out[newidx] = inp[x];
+        temp_indices[newidx] = x; 
+    }
+}
+
+
+
 #endif
