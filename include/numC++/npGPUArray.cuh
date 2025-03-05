@@ -519,7 +519,18 @@ namespace np
 		// argmin
 		ArrayGPU<int> argmin(const int axis = -1) const;
 
-		// sort
+		//####################### Sort ##############################
+
+		/*
+			function will not return anything it will make changes to the input itself
+			Arguments:
+			* B - second array
+			* C - Length of array
+			Ex: A.r_Sort(B);
+		*/
+		void r_Sort(std::vector<TP> &B, int len);
+		
+
 		// argsort
 
 		~ArrayGPU();
@@ -2306,6 +2317,50 @@ namespace np
 			free(ref_count);
 		}
 	}
-}
+
+
+	//radix_sort
+	template <typename TP>
+	void r_sort(TP* B,int &len ){
+		
+			int *i_d, *o_d, *scan_d, *count, *temp_indices;
+		
+			int* temp = (int*)malloc(len * sizeof(int));
+		
+			cudaMalloc(&i_d, sizeof(int) * len);
+			cudaMalloc(&o_d, sizeof(int) * len);
+			cudaMalloc(&scan_d, sizeof(int) * Radix);
+			cudaMalloc(&count, sizeof(int) * Radix);
+			cudaMalloc(&temp_indices, sizeof(int) * len);
+		
+			cudaMemcpy(i_d, B, len * sizeof(int), cudaMemcpyHostToDevice);
+		
+			for (int pass = 0; pass < bits / 2; pass++) {
+				int shift = pass * 2;
+		
+				cudaMemset(count, 0, Radix * sizeof(int));
+		
+				Count<<<(len + 255) / 256, 256>>>(i_d, count, shift, len);
+				
+				scan<<<1, Radix>>>(count, scan_d);
+				
+		
+				rearrange<<<(len + 255) / 256, 256>>>(i_d, o_d, scan_d, shift, len, temp_indices);
+				cudaDeviceSynchronize();
+		
+				cudaMemcpy(i_d, o_d, len * sizeof(int), cudaMemcpyDeviceToDevice);
+			}
+		
+			cudaMemcpy(B, i_d, len * sizeof(int), cudaMemcpyDeviceToHost);
+		
+			cudaFree(i_d);
+			cudaFree(o_d);
+			cudaFree(scan_d);
+			cudaFree(count);
+			cudaFree(temp_indices);
+			free(temp);
+		}
+	}
+
 
 #endif
